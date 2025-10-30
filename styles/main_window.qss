@@ -1,6 +1,3 @@
-/* styles/main_window.qss */
-
-
 /* ---------------------------------------------
    Global Base UI
    --------------------------------------------- */
@@ -13,6 +10,10 @@
     background: rgba(20, 20, 25, 0.10);/* 아주 약간 투명한 다크배경 */
 }
 
-
-
-
+QSizeGrip {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+QSizeGrip:hover {
+    background: rgba(255, 255, 255, 0.15);
+}

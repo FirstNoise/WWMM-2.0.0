@@ -29,6 +29,7 @@ class ModCard(StyledWidget):   # ✅ QFrame → StyledWidget
     def __init__(self, mod_name: str, mod_folder_path: str,
                  preview_path: str = None, applied: bool = False, parent=None):
         super().__init__(parent)
+        self.setFixedSize(400, 270)
         self.mod_name = mod_name
         self.mod_folder_path = mod_folder_path
         self.preview_path = preview_path
@@ -41,52 +42,59 @@ class ModCard(StyledWidget):   # ✅ QFrame → StyledWidget
     # ✅ UI 구성만 담당
     # ---------------------------------------
     def _init_ui(self):
-        self.setFixedWidth(280)
-
         layout = QVBoxLayout(self)
         layout.setAlignment(Qt.AlignTop)
 
         # 1) 모드 이름
         lbl_name = QLabel(self.mod_name)
-        lbl_name.setObjectName("ModName")     # ✅ QSS 매칭: #ModName
+        lbl_name.setObjectName("ModName")
         lbl_name.setAlignment(Qt.AlignCenter)
         layout.addWidget(lbl_name)
 
         # 2) 프리뷰 이미지
         self.preview_label = PreviewLabel(self.mod_folder_path)
-        self.preview_label.setObjectName("PreviewImage")   # ✅ QSS 매칭
+        self.preview_label.setObjectName("PreviewImage")
         self.preview_label.setAlignment(Qt.AlignCenter)
+        
 
         if self.preview_path:
             pixmap = QPixmap(self.preview_path).scaled(
-                QSize(260, 180), Qt.KeepAspectRatio, Qt.SmoothTransformation
+                QSize(361, 180), Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
             self.preview_label.setPixmap(pixmap)
         else:
+            self.preview_label.setFixedSize(361, 180)  # ✅ 박스 크기 고정
             self.preview_label.setText("미리보기 없음")
+            self.preview_label.setAlignment(Qt.AlignCenter)  # ✅ 중앙 정렬 추천
 
         layout.addWidget(self.preview_label)
 
         self.preview_label.previewClicked.connect(self._emit_preview_request)
 
+        # ✅ 여기 추가 → 이미지와 버튼 사이에 여유 공간 넣기
+        layout.addStretch(1)
+
         # 3) 버튼 영역
         self.btn_apply = QPushButton()
-        self.btn_apply.setObjectName("ApplyButton")   # ✅ QSS 매칭
+        self.btn_apply.setObjectName("ApplyButton")
 
         self.btn_delete = QPushButton("삭제")
-        self.btn_delete.setObjectName("DeleteButton") # ✅ QSS 매칭
+        self.btn_delete.setObjectName("DeleteButton")
 
         self._update_button_text()
 
         btn_layout = QHBoxLayout()
         btn_layout.addWidget(self.btn_apply)
         btn_layout.addWidget(self.btn_delete)
+
+        # ✅ 버튼은 항상 맨 아래 배치
         layout.addLayout(btn_layout)
 
         self.btn_apply.clicked.connect(self._emit_apply_request)
         self.btn_delete.clicked.connect(self._emit_delete_request)
 
         self.setCursor(QCursor(Qt.ArrowCursor))
+
 
     # ---------------------------------------
     # ✅ 신호 Emit 함수

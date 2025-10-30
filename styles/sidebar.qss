@@ -1,28 +1,80 @@
 /* styles/sidebar.qss */
 
 #SideBar {
-    background: rgba(40, 40, 45, 0.45); /* 반투명 */
-    border-right: 1px solid #333;
-    font-size: 30px;
+    background: rgba(40, 40, 45, 0.55);
+    border-right: 1px solid #2a2a2a;
 }
 
+/* 기본 글씨 크기 및 색 조정 */
 QTreeWidget {
     background: transparent;
+    color: #e9e9ee;
+    font-size: 22px;        /* ✅ 폰트 사이즈 +1 */
+    font-weight: 500;
     border: none;
-    color: #ddd;
-    font-size: 14px;
+    outline: none;
 }
 
-QTreeView::item {
-    padding: 6px 12px;
-    border-radius: 6px;
+/* 카테고리 (Top-Level Item) */
+QTreeWidget::item:has-children {
+    /* color: #bdbdc9; */
 }
 
-QTreeView::item:selected {
-    background: rgba(255,255,255,0.12);
+/* 카테고리 그룹 */
+QTreeWidget::item:has-children {
+    font-size: 15px;
+    font-weight: 600;
+    padding: 6px 8px;
+    /* color: #d3d3e3; */
+}
+
+/* 캐릭터 항목 */
+QTreeWidget::item {
+    min-height: 40px;
+    padding: 6px 14px;           /* ✅ 좌우 여유 확보 → 보기 쉬워짐 */
+    outline: none;
+    border: none;
+}
+
+/* Hover */
+QTreeWidget::item:hover {
+    background: rgba(255,255,255,0.06);
+}
+
+/* 선택됨 */
+QTreeWidget::item:selected {
+    /* background: rgba(140,160,255,0.28); */   /* ✅ 더 깔끔하고 선명한 선택 효과 */
+    background: rgba(255, 255, 255, 0.205);
     color: white;
+    border: none;
 }
 
-QTreeView::item:hover {
-    background: rgba(255,255,255,0.08);
+
+
+QScrollBar:vertical {
+    width: 8px;
+    background: transparent;
+    margin: 0;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical {
+    background: rgba(255,255,255,0.15);
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0;
+    width: 0;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: transparent;
 }

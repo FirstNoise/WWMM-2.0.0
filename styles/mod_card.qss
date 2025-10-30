@@ -8,8 +8,8 @@
 }
 
 .ModCard[applied="true"] {
-    border: 1px solid #4aa3ff;
-    box-shadow: 0px 0px 8px rgba(80,140,255,0.4);
+    border: 2px solid #4aa3ff;
+    /* box-shadow: 0px 0px 8px rgba(80,140,255,0.4); */
 }
 
 #PreviewImage {
@@ -18,15 +18,18 @@
 }
 
 #ModName {
-    font-size: 14px;
+    font-size: 16px;
     font-weight: 600;
     color: #ffffff;
 }
 
 #ApplyButton, #DeleteButton {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
     padding: 4px 8px;
     border-radius: 6px;
-    font-size: 13px;
+    
 }
 
 #ApplyButton {

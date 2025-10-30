@@ -1,7 +1,7 @@
 # ui/components/sidebar.py
 
 from PyQt5.QtWidgets import QVBoxLayout, QTreeWidget, QTreeWidgetItem
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QSize
 from PyQt5.QtGui import QIcon
 
 from utils.styled_widget import StyledWidget  # ✅ 변경
@@ -17,6 +17,7 @@ class SideBar(StyledWidget):  # ✅ QWidget → StyledWidget
 
         self.tree = QTreeWidget()
         self.tree.setHeaderHidden(True)
+        self.tree.setIconSize(QSize(38, 38))
         layout.addWidget(self.tree)
 
     def set_character_data(self, categories, category_icons, char_icons):

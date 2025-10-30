@@ -5,8 +5,9 @@ from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QMessageBox, QFileDialog, QDialog, QTreeWidgetItem
 )
-from PyQt5.QtGui import QIcon, QColor, QBrush
+from PyQt5.QtGui import QIcon, QColor, QBrush, QPainter
 from PyQt5.QtCore import QFileSystemWatcher, Qt
+from PyQt5.QtWidgets import QSizeGrip
 
 from utils.styled_widget import StyledWidget
 
@@ -20,8 +21,51 @@ from ui.dialogs.settings_dialog import SettingsDialog
 # ✅ Controller
 from controller.main_controller import MainController
 
+# 투명 장벽을 세움으로서 클릭 이벤트 관통을 방지
+class CentralSurface(StyledWidget):
+    def paintEvent(self, event):
+        # 여기에 "투명하지만 존재하는 픽셀" 장벽을 단 1회만 생성
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), QColor(0, 0, 0, 1))  # 알파 1 = 육안에 안보이지만 존재
+
 class MainWindow(QMainWindow):
+    
     """ModsView 제거 후 완전 분리형 UI 구조 (조립 중심형)"""
+
+    def _remember_tree_expansion(self):
+        expanded = {}
+        root = self.sidebar.tree.invisibleRootItem()
+        stack = [root]
+        while stack:
+            item = stack.pop()
+            expanded[item.text(0)] = item.isExpanded()
+            for i in range(item.childCount()):
+                stack.append(item.child(i))
+        return expanded
+
+    def _restore_tree_expansion(self, expanded):
+        root = self.sidebar.tree.invisibleRootItem()
+        stack = [root]
+        while stack:
+            item = stack.pop()
+            name = item.text(0)
+            if name in expanded:
+                item.setExpanded(expanded[name])
+            for i in range(item.childCount()):
+                stack.append(item.child(i))
+
+    def _expand_parent_of_character(self, char_name):
+        root = self.sidebar.tree.invisibleRootItem()
+        stack = [root]
+        while stack:
+            item = stack.pop()
+            if item.text(0) == char_name and item.parent():
+                item.parent().setExpanded(True)
+                return
+            for i in range(item.childCount()):
+                stack.append(item.child(i))
+
+
     def __init__(self, controller: MainController):
         super().__init__()
         self.controller = controller
@@ -33,9 +77,6 @@ class MainWindow(QMainWindow):
         self.watcher = QFileSystemWatcher()
         self.watcher.directoryChanged.connect(self._on_mods_directory_changed)
 
-        # 윈도우 타이틀 고정
-        self.setWindowTitle("Wuthering Waves Mod Manager 2.0.0")
-
         # ✅ UI 구성
         self.topbar = TopBar(self)
         self.sidebar = SideBar(self)
@@ -45,7 +86,7 @@ class MainWindow(QMainWindow):
         self.mod_cards.controller = self.controller  # ✅ 이 한 줄
 
         # ✅ 레이아웃 조립
-        central = StyledWidget()
+        central = CentralSurface()
         central.class_name = "CentralBackground"   # ✅ QSS `.CentralBackground` 와 매칭
         self.setCentralWidget(central)
 
@@ -57,16 +98,19 @@ class MainWindow(QMainWindow):
 
         # 사이드바 + 드랍 가능 메인 영역
         # ✅ 비율 1 : 3 적용 (= 25:75 UI 균형)
+        
         content_layout.addWidget(self.sidebar, 1)
         content_layout.addWidget(self.mod_cards, 3)  # ✅ 변경된 부분 (mod_cards X)
 
         main_layout.addLayout(content_layout)
 
+        self._add_resize_handle()
         # 시그널 연결
         self._connect_signals()
 
         # 초기 실행
         self.initialize_app()
+
 
     # ---------------------------------------------------
     # 초기 실행
@@ -85,10 +129,7 @@ class MainWindow(QMainWindow):
         ok, msg, payload = self.controller.load_characters(ui_characters)
         self.apply_payload(ok, msg, payload)
 
-        characters = payload.get("lists", {}).get("characters", [])
-        if characters:
-            ok, msg, payload = self.controller.select_character(characters[0])
-            self.apply_payload(ok, msg, payload)
+
 
         # ✅ WWMM 전체 mods 폴더 감시
         mods_root = self.controller.logic.wwmm_mods_path
@@ -151,6 +192,8 @@ class MainWindow(QMainWindow):
         if not payload:
             return
 
+        # ✅ 트리 펼침/접힘 상태 저장
+        expand_state = self._remember_tree_expansion()
         lists = payload.get("lists", {})
         selected = payload.get("selected", {})
         available_characters = lists.get("characters", [])
@@ -168,6 +211,17 @@ class MainWindow(QMainWindow):
         category_icons = meta.get("category_icons", {})
         category_colors = meta.get("category_colors", {})
         char_icons = meta.get("char_icons", {})
+
+        # ✅ 방랑자(단일 캐릭터)를 최상위에 직접 추가
+        wanderers = meta.get("wanderer", [])
+        for char_name in wanderers:
+            item = QTreeWidgetItem([char_name])
+
+            icon_path = char_icons.get(char_name)
+            if icon_path and os.path.exists(icon_path):
+                item.setIcon(0, QIcon(icon_path))
+
+            self.sidebar.tree.insertTopLevelItem(0, item)
 
         for category_name, char_list in categories.items():
 
@@ -197,7 +251,18 @@ class MainWindow(QMainWindow):
 
                 category_item.addChild(child)
 
-        self.sidebar.tree.expandAll()
+
+
+        # ✅ 선택 캐릭터를 먼저 확정
+        if "character" in selected:
+            self.current_character = selected["character"]
+
+        # ✅ 펼침/접힘 상태 복원
+        self._restore_tree_expansion(expand_state)
+
+        # ✅ 현재 캐릭터가 속한 상위 카테고리만 펼침 (다른 카테고리는 그대로)
+        if self.current_character:
+            self._expand_parent_of_character(self.current_character)
 
         # ✅ 선택 캐릭터 및 모드 구성
         if "character" in selected:
@@ -211,8 +276,8 @@ class MainWindow(QMainWindow):
             self.mod_cards.clear_cards()
 
             if not mods:
-                empty = EmptyModDropCard(self.mod_cards)
-                self.mod_cards.add_card(empty)
+                # 카드가 없으면 그냥 clear 후 return → 컨테이너가 자동으로 placeholder 처리
+                self.mod_cards.clear_cards()
                 return
 
             for row, mod_name in enumerate(mods):
@@ -233,6 +298,27 @@ class MainWindow(QMainWindow):
                 )
                 self.mod_cards.add_card(card)
 
+                # ✅ 트리에서 현재 캐릭터를 선택 상태로 적용
+            if self.current_character:
+                item = self._find_tree_item(self.current_character)
+                if item:
+                    self.sidebar.tree.setCurrentItem(item)
+
+    # ---------------------------------------------------
+    # 트리 탐색
+    # ---------------------------------------------------
+    
+    def _find_tree_item(self, name):
+        root = self.sidebar.tree.invisibleRootItem()
+        stack = [root]
+        while stack:
+            item = stack.pop()
+            if item.text(0) == name:
+                return item
+            for i in range(item.childCount()):
+                stack.append(item.child(i))
+        return None
+
     # ---------------------------------------------------
     # 시그널 연결
     # ---------------------------------------------------
@@ -240,6 +326,13 @@ class MainWindow(QMainWindow):
         # 부모가 None → 카테고리 → 클릭 무시
         #if item.parent() is None:
         #    return
+
+        # ✅ Top-Level 이면서 자식이 없는 경우 → "방랑자" 같은 단일 캐릭터
+        if item.parent() is None and item.childCount() == 0:
+            char_name = item.text(0)
+            ok, msg, payload = self.controller.select_character(char_name)
+            self.apply_payload(ok, msg, payload)
+            return
 
         # ✅ 카테고리 클릭 → 펼치기/접기 toggle
         if item.parent() is None:
@@ -351,6 +444,22 @@ class MainWindow(QMainWindow):
                 self.apply_payload(*self.controller.set_wwmi_path(new_wwmi))
             if new_xxmi:
                 self.apply_payload(*self.controller.set_xxmi_launcher_path(new_xxmi))
+
+
+    def _add_resize_handle(self):
+        """오른쪽-하단 모서리에 투명 크기조절 핸들 추가"""
+        self._grip = QSizeGrip(self)
+        self._grip.setStyleSheet("QSizeGrip { background: transparent; }")
+        self._grip.setFixedSize(20, 20)
+        self._reposition_grip()
+
+        # ✅ 항상 오른쪽 아래 위치 고정
+    def _reposition_grip(self):
+        self._grip.move(self.width() - self._grip.width(), self.height() - self._grip.height())
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._reposition_grip()
 
     # ---------------------------------------------------
     # XXMI 실행

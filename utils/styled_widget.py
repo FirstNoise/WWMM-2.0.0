@@ -2,6 +2,7 @@
 from PyQt5.QtWidgets import QFrame
 from utils.qss_loader import apply_qss
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter, QColor
 
 class StyledWidget(QFrame):   # ✅ QWidget → QFrame
     qss = None

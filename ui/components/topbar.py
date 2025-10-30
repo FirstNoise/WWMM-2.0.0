@@ -25,7 +25,7 @@ class TopBar(StyledWidget):  # ✅ QWidget → StyledWidget
         layout.setSpacing(10)
 
         # 앱 이름
-        self.title = QLabel("Wuthering Waves Mod Manager")
+        self.title = QLabel("WWWMM - Wuthering Waves Mod Manager 2.0.0")
         self.title.setObjectName("TitleLabel")
 
         # 실행 버튼

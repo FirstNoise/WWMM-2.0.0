@@ -38,7 +38,7 @@ def get_character_data():
 
     # 필요한 캐릭터만 발췌 예시. 전체는 같은 방식으로 나열
     char_icons = {
-        "방랑자": "/resources/icons/char_방랑자.png",
+        "방랑자": _icon("char_방랑자.png"),
         "갈브레나": _icon("char_갈브레나.png"),
         "유노": _icon("char_유노.png"),
         "아우구스타": _icon("char_아우구스타.png"),
@@ -81,7 +81,7 @@ def get_character_data():
     category_colors = {
         "기류": "#00b894",
         "용융": "#e17055",
-        "인멸": "#6c3483",
+        "인멸": "#9457ac",
         "회절": "#fdcb6e",
         "응결": "#5e8ca6",
         "전도": "#a29bfe",
@@ -94,3 +94,4 @@ def get_character_data():
         "char_icons": char_icons,
         "category_colors": category_colors,
     }
+    

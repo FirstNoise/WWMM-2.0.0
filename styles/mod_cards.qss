@@ -5,3 +5,39 @@
     border-left: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 0px; /* 여기서 둥근 모서리는 안 줌 (부모가 유리판) */
 }
+
+EmptyModDropCard QLabel {
+    color: aliceblue;
+}
+
+QScrollArea {
+    background: transparent;
+}
+
+QScrollBar:vertical {
+    width: 8px;
+    background: transparent;
+    margin: 0;
+    border-radius: 4px;
+}
+
+QScrollBar::handle:vertical {
+    background: rgba(255,255,255,0.12);
+    border-radius: 4px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background: rgba(255,255,255,0.25);
+}
+
+QScrollBar::add-line:vertical,
+QScrollBar::sub-line:vertical {
+    height: 0;
+    width: 0;
+}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical {
+    background: transparent;
+}
