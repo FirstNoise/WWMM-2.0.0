@@ -1,0 +1,15 @@
+// .vscode/launch.json
+{
+  "version": "2.0.0",
+  "configurations": [
+    {
+      "name": "Run WWMM (Terminal)",
+      "type": "python",
+      "request": "launch",
+      "program": "${workspaceFolder}/wwmm_start.py",
+      "console": "integratedTerminal",   // ← 터미널 탭으로 출력
+      "redirectOutput": true,            // ← stdout/stderr를 Debug Console로
+      "justMyCode": true
+    }
+  ]
+}

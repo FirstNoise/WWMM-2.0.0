@@ -1,0 +1,18 @@
+/* styles/drop_overlay.qss */
+
+/* ---------------------------------------------
+   Drop Overlay (드래그 시 표시되는 상위 투명 레이어)
+   --------------------------------------------- */
+DropOverlay {
+    background-color: rgba(80, 130, 255, 0.15);  /* 드래그 영역 강조 */
+    border: 2px dashed rgba(150, 200, 255, 0.6);
+    border-radius: 12px;
+}
+
+/* 안내 텍스트 */
+DropOverlay QLabel {
+    color: rgba(200, 220, 255, 0.9);
+    font-size: 15px;
+    font-weight: 500;
+    text-align: center;
+}

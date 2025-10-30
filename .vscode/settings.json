@@ -1,0 +1,6 @@
+{
+  "files.associations": {
+    "*.qss": "css"
+  },
+  "qtForPython.enableQml": false     // (선택) QML 경고 끄기
+}

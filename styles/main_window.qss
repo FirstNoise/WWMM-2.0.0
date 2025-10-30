@@ -1,0 +1,18 @@
+/* styles/main_window.qss */
+
+
+/* ---------------------------------------------
+   Global Base UI
+   --------------------------------------------- */
+
+
+/* styles/main_window.qss */
+
+/* 메인 배경 레이어 */
+.CentralBackground {
+    background: rgba(20, 20, 25, 0.10);/* 아주 약간 투명한 다크배경 */
+}
+
+
+
+

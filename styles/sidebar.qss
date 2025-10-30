@@ -1,0 +1,28 @@
+/* styles/sidebar.qss */
+
+#SideBar {
+    background: rgba(40, 40, 45, 0.45); /* 반투명 */
+    border-right: 1px solid #333;
+    font-size: 30px;
+}
+
+QTreeWidget {
+    background: transparent;
+    border: none;
+    color: #ddd;
+    font-size: 14px;
+}
+
+QTreeView::item {
+    padding: 6px 12px;
+    border-radius: 6px;
+}
+
+QTreeView::item:selected {
+    background: rgba(255,255,255,0.12);
+    color: white;
+}
+
+QTreeView::item:hover {
+    background: rgba(255,255,255,0.08);
+}

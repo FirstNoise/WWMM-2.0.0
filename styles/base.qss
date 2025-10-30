@@ -1,0 +1,65 @@
+/* --------------------------------------------------
+  styles/base.qss
+   -------------------------------------------------- */
+
+QWidget {
+    background-color: #353535;      /* Window */
+    color: #ffffff;                 /* WindowText */
+    font-family: "Asta Sans", "Segoe UI", sans-serif;
+    font-size: 13px;
+}
+
+QMainWindow, QDialog {
+    background-color: #191919;      /* Base */
+}
+
+QLabel {
+    color: #ffffff;
+}
+
+QPushButton {
+    background-color: #353535;
+    color: #ffffff;
+    border: 1px solid #555;
+    border-radius: 6px;
+    padding: 6px 12px;
+}
+QPushButton:hover {
+    background-color: #2a82da;      /* Highlight */
+}
+QPushButton:pressed {
+    background-color: #1e5fa8;
+}
+
+QListWidget, QTreeWidget, QTextEdit, QLineEdit {
+    background-color: #252525;
+    color: #ffffff;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+QScrollBar:vertical {
+    border: none;
+    background: #222;
+    width: 10px;
+    margin: 0px;
+}
+QScrollBar::handle:vertical {
+    background: #444;
+    border-radius: 5px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #666;
+}
+
+/* 하이라이트/선택 */
+QAbstractItemView::item:selected {
+    background-color: #2a82da;
+    color: #000000;
+}
+
+DropContainer, QFrame#DropContainer {
+    background-color: #242424;
+    border: 2px dashed #555;
+    border-radius: 10px;
+}

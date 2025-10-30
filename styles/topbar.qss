@@ -1,0 +1,34 @@
+/* styles/topbar.qss */
+
+#TopBar {
+    background: rgba(40, 40, 45, 0.55); /* 반투명 */
+    border-bottom: 1px solid #333;
+}
+
+#TitleLabel {
+    color: #f0f0f0;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+#WindowButton {
+    background: transparent;
+    color: #cccccc;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+
+#WindowButton:hover {
+    background: rgba(255,255,255,0.12);
+}
+
+#CloseButton {
+    background: transparent;
+    color: #e66;
+    padding: 4px 10px;
+    border-radius: 6px;
+}
+#CloseButton:hover {
+    background: rgba(255,80,80,0.45);
+    color: white;
+}

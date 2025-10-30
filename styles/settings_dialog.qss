@@ -1,0 +1,55 @@
+/* styles/settings_dialog.qss */
+
+/* 메인 다이얼로그 배경 */
+.SettingsDialog {
+    background-color: #202225;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+/* 상단 닫기 버튼 */
+#CloseButton {
+    background: transparent;
+    color: #cfd2d6;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+#CloseButton:hover {
+    background: rgba(255,255,255,0.12);
+    color: white;
+}
+
+/* 라벨 */
+QLabel {
+    color: #cfd2d6;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+}
+
+/* 입력 박스 */
+QLineEdit {
+    background-color: #2b2d31;
+    color: white;
+    padding: 6px;
+    border: 1px solid #3a3d42;
+    border-radius: 4px;
+}
+
+/* 버튼 */
+QPushButton {
+    background-color: #3a3d42;
+    padding: 6px 14px;
+    border-radius: 4px;
+    color: white;
+    font-weight: 500;
+}
+
+QPushButton:hover {
+    background-color: #4f545c;
+}
+
+QPushButton:pressed {
+    background-color: #2b2d31;
+}

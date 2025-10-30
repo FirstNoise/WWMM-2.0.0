@@ -32,20 +32,22 @@ def write_lock():
     except Exception as e:
         print(f"lock 파일 생성 실패: {e}")
 
+def create_lock():
+    with open(LOCK_FILE, "w") as f:
+        f.write(str(os.getpid()))
+
 def remove_lock():
-    try:
-        if os.path.exists(LOCK_FILE):
+    if os.path.exists(LOCK_FILE):
+        try:
             os.remove(LOCK_FILE)
-            print("lock 파일 삭제")
-    except Exception as e:
-        print(f"lock 파일 삭제 실패: {e}")
-
-if is_another_instance_running():
-    from PyQt5.QtWidgets import QApplication, QMessageBox
-    app = QApplication(sys.argv)
-    QMessageBox.warning(None, "WWMM", "이미 실행 중입니다.")
-    sys.exit(0)
-
+        except Exception:
+            pass
+if __name__ == "__main__":
+    if is_another_instance_running():
+        from PyQt5.QtWidgets import QApplication, QMessageBox
+        app = QApplication(sys.argv)
+        QMessageBox.warning(None, "WWMM", "이미 실행 중입니다.")
+        sys.exit(0)
 write_lock()
 import atexit
 atexit.register(remove_lock)
@@ -61,6 +63,7 @@ from wwmm_mod_utils import add_mod_folder, delete_mod, get_preview_image_path
 from wwmm_symlink import create_symlink_windows_compatible
 from wwmm_settings import load_settings, save_settings
 from wwmm_mod_utils import is_admin, run_as_admin
+print(run_as_admin.__module__, run_as_admin.__name__)
 
 class ModCardsContainer(QWidget):
     def __init__(self, parent, wwmm_window):
@@ -216,14 +219,23 @@ class WWMM(QWidget):
 
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("WWMM - Wuthering Waves Mod Manager")
+        # [핵심] 아이콘 경로 계산: 빌드환경과 개발환경 모두 대응
+        if getattr(sys, 'frozen', False):
+            # 배포(EXE) 환경
+            base_dir = os.path.dirname(sys.executable)
+        else:
+            # 개발(스크립트) 환경
+            base_dir = os.path.dirname(os.path.abspath(__file__))
+
+        icon_path = os.path.join(base_dir, "wwmm_icon.ico")
+        self.setWindowTitle("WWMM - Wuthering Waves Mod Manager.1.03")
         self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setWindowIcon(QIcon(os.path.join(os.getcwd(), "./WWMM_icon.ico")))
+        self.setWindowIcon(QIcon(icon_path))  # ← 이렇게 변경!
         self.resize(1200, 700)
 
-        self.wwmm_mods_path = os.path.abspath(os.path.join(os.getcwd(), "Mods"))
+        self.wwmm_mods_path = os.path.join(base_dir, "Mods")
         self.wwmi_mods_path = None
-        self.settings_file = os.path.join(os.getcwd(), "settings.json")
+        self.settings_file = os.path.join(base_dir, "settings.json")
 
         self.current_character = None
         self.character_order = []
@@ -284,7 +296,7 @@ class WWMM(QWidget):
         self.title_bar_widget.mousePressEvent = self.title_bar_mousePressEvent
         self.title_bar_widget.mouseMoveEvent = self.title_bar_mouseMoveEvent
 
-        title = QLabel("WWMM - Wuthering Waves Mod Manager")
+        title = QLabel("WWMM - Wuthering Waves Mod Manager.1.03")
         title.setStyleSheet("color: white; font-weight: bold; font-size: 20px; padding-left: 8px;")
         title.setContentsMargins(0, -2, 0, 0)
         title.setFixedHeight(36)
@@ -398,6 +410,7 @@ class WWMM(QWidget):
         self.mod_cards_layout = QGridLayout()
         self.mod_cards_vbox = QVBoxLayout()
         self.add_mod_button = QPushButton("＋ 모드 추가")
+        self.add_mod_button.setCursor(Qt.PointingHandCursor) 
         self.add_mod_button.setFixedHeight(34)
         self.add_mod_button.setStyleSheet("""
             QPushButton {
@@ -484,12 +497,12 @@ class WWMM(QWidget):
             self.set_xxmi_launcher_path()
             if hasattr(self, "xxmi_launcher_path") and self.xxmi_launcher_path and os.path.exists(self.xxmi_launcher_path):
                 try:
-                    run_as_admin(self.xxmi_launcher_path)  # 여기서 관리자 권한 실행!
+                    run_as_admin(self.xxmi_launcher_path, [])  # 여기서 관리자 권한 실행!
                 except Exception as e:
                     self.show_topmost_message("실행 실패", f"XXMI Launcher 실행 중 오류:\n{e}")
             return
         try:
-            run_as_admin(self.xxmi_launcher_path)  # 여기서 관리자 권한 실행!
+            run_as_admin(self.xxmi_launcher_path, [])  # 여기서 관리자 권한 실행!
         except Exception as e:
             self.show_topmost_message("실행 실패", f"XXMI Launcher 실행 중 오류:\n{e}")
         
@@ -533,12 +546,12 @@ class WWMM(QWidget):
         ]
 
         categories = {
-            "기류": ["카르티시아", "샤콘", "감심", "양양", "기염", "알토"],
-            "용융": ["루파", "장리", "앙코", "치샤", "브렌트", "모르테피"],
-            "인멸": ["칸타렐라", "로코코", "카멜리아", "도기", "단근"],
+            "기류": ["유노", "카르티시아", "샤콘", "감심", "양양", "기염", "알토"],
+            "용융": ["갈브레나", "루파", "장리", "앙코", "치샤", "브렌트", "모르테피"],
+            "인멸": ["플로로", "칸타렐라", "로코코", "카멜리아", "도기", "단근"],
             "회절": ["젠니", "페비", "파수인", "금희", "벨리나"],
             "응결": ["카를로타", "절지", "유호", "산화", "설지", "능양"],
-            "전도": ["음림", "상리요", "카카루", "루미", "연무"],
+            "전도": ["아우구스타", "음림", "상리요", "카카루", "루미", "연무"],
         }
         wanderer = ["방랑자"]
 
@@ -552,6 +565,10 @@ class WWMM(QWidget):
         }
         char_icons = {
             "방랑자": "./icons/char_방랑자.png",
+            "갈브레나": "./icons/char_갈브레나.png",
+            "유노": "./icons/char_유노.png",
+            "아우구스타": "./icons/char_아우구스타.png",
+            "플로로": "./icons/char_플로로.png",
             "루파": "./icons/char_루파.png",
             "카르티시아": "./icons/char_카르티시아.png",
             "샤콘": "./icons/char_샤콘.png",
@@ -804,45 +821,22 @@ class WWMM(QWidget):
                 return item
         return None
 
-    def apply_mod(self, char_name, mod_name):
-        import sys
-        import subprocess
-        from PyQt5.QtWidgets import QMessageBox
-        src = os.path.join(self.wwmm_mods_path, char_name, mod_name)
-        dst = os.path.join(self.wwmi_mods_path, char_name)
-        # is_admin()와 run_as_admin() 함수는 반드시 파일 어딘가에 정의돼 있어야 함!
-        if not is_admin():
-            run_as_admin(
-                sys.executable,
-                [sys.argv[0], '--apply-mod', char_name, mod_name]
-            )
-            sys.exit(0)
-        else:
-            create_symlink_windows_compatible(src, dst, None)  # 이건 create_symlink_windows_compatible 등 네가 만든 함수로!
-            QMessageBox.information(None, "완료", "모드가 적용되었습니다. WWMM을 다시 시작합니다.")
-            subprocess.Popen([sys.executable, sys.argv[0]])
-            sys.exit(0)
-
     def toggle_mod(self, mod_name, is_applied):
-        if not self.current_character or not self.wwmi_mods_path:
-            self.show_topmost_message("오류", "WWMI 경로가 설정되어 있지 않습니다.")
+
+        if not self.wwmi_mods_path:
+            self.show_topmost_message("경로 오류", "WWMI Mods 폴더 경로를 먼저 설정해주세요!")
             return
+        
         char_name = self.current_character
+        char_mod_path = os.path.join(self.wwmm_mods_path, char_name, mod_name)
         target_path = os.path.join(self.wwmi_mods_path, char_name)
+
         if is_applied:
-            try:
-                if os.path.exists(target_path):
-                    if os.path.islink(target_path):
-                        os.unlink(target_path)
-                    else:
-                        shutil.rmtree(target_path)
-                # UI 상태 확실히 새로고침
-                self.on_character_selected(self.find_character_item(self.current_character))
-            except Exception as e:
-                self.show_topmost_message("오류", f"해제 실패:\n{e}")
+            # 해제: 관리자 권한으로 helper 실행 ("remove")
+            self.call_symlink_helper_as_admin("remove", "", target_path)
         else:
-            self.apply_mod(char_name, mod_name)
-            return
+            # 적용: 관리자 권한으로 helper 실행 ("apply")
+            self.call_symlink_helper_as_admin("apply", char_mod_path, target_path)
 
     def get_applied_mod_name(self, character_name):
         if not self.wwmi_mods_path:
@@ -853,3 +847,34 @@ class WWMM(QWidget):
             return os.path.basename(os.path.normpath(linked_path))
         return None
     
+    def call_symlink_helper_as_admin(self, mode, src, dst):
+        import sys
+        import os
+        from wwmm_mod_utils import run_as_admin
+
+        if getattr(sys, 'frozen', False):
+            # 배포(EXE) 환경
+            helper_path = os.path.join(os.path.dirname(sys.executable), "wwmm_symlink_helper.exe")
+            if mode == "apply":
+                params = [mode, src, dst]
+            elif mode == "remove":
+                params = [mode, dst]
+            else:
+                return False
+            run_as_admin(helper_path, params)
+        else:
+            # 개발(스크립트) 환경
+            helper_path = os.path.join(os.path.dirname(__file__), "wwmm_symlink_helper.py")
+            if mode == "apply":
+                params = [helper_path, mode, src, dst]
+            elif mode == "remove":
+                params = [helper_path, mode, dst]
+            else:
+                return False
+            run_as_admin(sys.executable, params)
+
+        # 권한 상승된 새 프로세스에서 작업을 하므로, 여기서는 바로 성공여부 판단 X
+        # 약간의 딜레이 후 상태를 새로고침(예: 1~2초 뒤 refresh)
+        from PyQt5.QtCore import QTimer
+        QTimer.singleShot(1500, lambda: self.on_character_selected(self.find_character_item(self.current_character)))
+

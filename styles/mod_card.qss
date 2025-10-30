@@ -1,0 +1,40 @@
+/* styles/mod_card.qss */
+
+.ModCard {
+    background-color: #303236;
+    border: 1px solid #444;
+    border-radius: 10px;
+    padding: 8px;
+}
+
+.ModCard[applied="true"] {
+    border: 1px solid #4aa3ff;
+    box-shadow: 0px 0px 8px rgba(80,140,255,0.4);
+}
+
+#PreviewImage {
+    background-color: #242629;
+    border-radius: 8px;
+}
+
+#ModName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+#ApplyButton, #DeleteButton {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+#ApplyButton {
+    background-color: #4d78ff;
+}
+#ApplyButton:hover { background-color: #6e92ff; }
+
+#DeleteButton {
+    background-color: #b84c4c;
+}
+#DeleteButton:hover { background-color: #d06060; }

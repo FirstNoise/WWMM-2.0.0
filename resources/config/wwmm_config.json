@@ -1,0 +1,19 @@
+{
+  "wwmi_mods_path": "C:/Users/kky29/AppData/Roaming/XXMI Launcher/WWMI/Mods",
+  "last_selected_character": "장리",
+  "last_selected_mod": "Yixuan",
+  "ui": {
+    "window_size": [
+      1024,
+      720
+    ],
+    "theme": "default"
+  },
+  "preferences": {
+    "auto_apply_on_startup": false,
+    "show_preview_images": true
+  },
+  "paths": {
+    "wwmi_mods_path": "C:/Users/kky29/AppData/Roaming/XXMI Launcher/WWMI"
+  }
+}
