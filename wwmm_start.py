@@ -81,7 +81,7 @@ def main():
 
 
     # ✅ 앱 아이콘
-    icon_path = resource_path("resources/icons/wwmm_icon.ico")
+    icon_path = resource_path("resources/Wuthering_Waves/wwmm_icon.ico")
     if os.path.exists(icon_path):
         app.setWindowIcon(QIcon(icon_path))
 

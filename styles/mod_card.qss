@@ -13,6 +13,8 @@
 }
 
 #PreviewImage {
+    color: #ffffff;
+    font-weight: 600;
     background-color: #242629;
     border-radius: 8px;
 }

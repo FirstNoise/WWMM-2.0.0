@@ -1,13 +1,17 @@
 # ui/components/mod_cards.py
 
+import os
+
 from PyQt5.QtWidgets import (
     QGridLayout, QVBoxLayout, QStackedLayout,
     QSizePolicy, QLabel, QWidget, QScrollArea
 )
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+
+from .no_character_card import NoCharacterSelectedCard
+from .drop_overlay import DropOverlay
 
 from utils.styled_widget import StyledWidget
-from .drop_overlay import DropOverlay
 
 
 HORIZONTAL_SPACING = 16
@@ -16,6 +20,8 @@ OUTER_MARGIN = 24
 
 
 class ModCardsContainer(StyledWidget):
+    modFolderDropped = pyqtSignal(str)
+    current_character = None  # ✅ 상태 저장 필드 추가
     object_name = "ModCardsContainer"
     qss = "mod_cards.qss"
 
@@ -64,6 +70,44 @@ class ModCardsContainer(StyledWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setAcceptDrops(True)
 
+    def set_character(self, character_name):
+        self.current_character = character_name
+        self.request_reposition_layout()  # ✅ 화면 다시 배치
+
+    # ==============================
+    # 상태에 따른 빈 화면 분기 로직
+    # ==============================
+
+    def reposition_cards_in_layout(self):
+        self.reposition_pending_flag = False
+
+        # 기존 카드 제거
+        while self.grid_layout.count():
+            item = self.grid_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.setParent(None)
+
+        # ✅ 상태 1: 캐릭터 미선택
+        if self.current_character is None:
+            placeholder = NoCharacterSelectedCard(self.inner_widget)
+            self.grid_layout.addWidget(placeholder, 0, 0, Qt.AlignCenter)
+            return
+
+        # ✅ 상태 2: 캐릭터 선택 + 모드 없음
+        if not self.cards:
+            placeholder = EmptyModDropCard(self.inner_widget)
+            self.grid_layout.addWidget(placeholder, 0, 0, Qt.AlignCenter)
+            return
+
+        # ✅ 상태 3: 캐릭터 선택 + 모드 있음 → 기존 로직 유지
+        column_count = self.calculate_column_count()
+        for index, card_widget in enumerate(self.cards):
+            row = index // column_count
+            col = index % column_count
+            self.grid_layout.addWidget(card_widget, row, col, Qt.AlignTop)
+
+
     # ==============================
     # 카드 관리
     # ==============================
@@ -99,7 +143,9 @@ class ModCardsContainer(StyledWidget):
         if not self.cards:
             return 1
 
-        available_width = self.inner_widget.width() - (OUTER_MARGIN * 2)
+        # ✅ 스크롤 영역(viewport)의 실제 표시 가능한 너비 사용
+        available_width = self.scroll.viewport().width() - (OUTER_MARGIN * 2)
+
         if available_width <= 0:
             return 1
 
@@ -120,25 +166,25 @@ class ModCardsContainer(StyledWidget):
     # ==============================
     # 재배치 실제 수행
     # ==============================
-    def reposition_cards_in_layout(self):
-        self.reposition_pending_flag = False
+    # def reposition_cards_in_layout(self):
+    #     self.reposition_pending_flag = False
 
-        while self.grid_layout.count():
-            item = self.grid_layout.takeAt(0)
-            widget = item.widget()
-            if widget:
-                widget.setParent(None)
+    #     while self.grid_layout.count():
+    #         item = self.grid_layout.takeAt(0)
+    #         widget = item.widget()
+    #         if widget:
+    #             widget.setParent(None)
 
-        column_count = self.calculate_column_count()
+    #     column_count = self.calculate_column_count()
 
-        for index, card_widget in enumerate(self.cards):
-            row = index // column_count
-            col = index % column_count
-            self.grid_layout.addWidget(card_widget, row, col, Qt.AlignTop)
+    #     for index, card_widget in enumerate(self.cards):
+    #         row = index // column_count
+    #         col = index % column_count
+    #         self.grid_layout.addWidget(card_widget, row, col, Qt.AlignTop)
 
-        if not self.cards:
-            placeholder = EmptyModDropCard(self.inner_widget)
-            self.grid_layout.addWidget(placeholder, 0, 0, Qt.AlignCenter)
+    #     if not self.cards:
+    #         placeholder = EmptyModDropCard(self.inner_widget)
+    #         self.grid_layout.addWidget(placeholder, 0, 0, Qt.AlignCenter)
 
     # ==============================
     # 리사이즈
@@ -148,6 +194,51 @@ class ModCardsContainer(StyledWidget):
         self.overlay_widget.resize(self.size())
         self.request_reposition_layout()
 
+    # ==============================
+    # Drag & Drop Entry Point
+    # ==============================
+    def dragEnterEvent(self, event):
+        # ✅ 캐릭터 없을 때 드롭 관련 UI/이벤트 전부 무시
+        if self.current_character is None:
+            event.ignore()
+            return
+
+        if event.mimeData().hasUrls():
+            self.overlay_widget.show()
+            event.acceptProposedAction()
+
+    def dragMoveEvent(self, event):
+        # ✅ 캐릭터 없을 때 완전 무시
+        if self.current_character is None:
+            event.ignore()
+            return
+        
+        event.acceptProposedAction()
+
+    def dragLeaveEvent(self, event):
+        self.overlay_widget.hide()
+        event.accept()
+
+    def dropEvent(self, event):
+        self.overlay_widget.hide()
+
+        # ✅ 캐릭터 없을 때 드랍 완전 차단
+        if self.current_character is None:
+            event.ignore()
+            return
+
+        urls = event.mimeData().urls()
+        if not urls:
+            return
+
+        path = urls[0].toLocalFile()
+
+        # 이미지 파일이면 DropOverlay 에서 처리해야 하므로 여기서는 무시
+        if path.lower().endswith((".png", ".jpg", ".jpeg", ".bmp", ".gif")):
+            return
+
+        if os.path.isdir(path):
+            self.modFolderDropped.emit(path)
 
 class EmptyModDropCard(StyledWidget):
     object_name = "EmptyModDropCard"
@@ -158,8 +249,9 @@ class EmptyModDropCard(StyledWidget):
         self.setAttribute(Qt.WA_StyledBackground, True)
 
         layout = QVBoxLayout(self)
-        label = QLabel("모드가 없습니다.\n+ 버튼 또는 드래그 영역을 사용하세요.")
+        label = QLabel("모드가 없습니다.\n+ 버튼 혹은 폴더를 드래그 해주세요.")
         label.setAlignment(Qt.AlignCenter)
         layout.addStretch()
         layout.addWidget(label)
         layout.addStretch()
+

@@ -10,6 +10,8 @@ class SideBar(StyledWidget):  # ✅ QWidget → StyledWidget
     object_name = "SideBar"   # ✅ 자동 setObjectName
     qss = "sidebar.qss"       # ✅ 자동 apply_qss
 
+    characterSelected = pyqtSignal(str)   # ✅ 추가
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -19,6 +21,17 @@ class SideBar(StyledWidget):  # ✅ QWidget → StyledWidget
         self.tree.setHeaderHidden(True)
         self.tree.setIconSize(QSize(38, 38))
         layout.addWidget(self.tree)
+
+        self.tree.itemClicked.connect(self._on_item_clicked)   # ✅ 연결
+
+    def _on_item_clicked(self, item, column):
+        # ✅ 카테고리는 클릭해도 동작하지 않도록 처리
+        if item.parent() is None and item.childCount() > 0:
+            item.setExpanded(not item.isExpanded())
+            return
+        
+        char_name = item.text(0)
+        self.characterSelected.emit(char_name)   # ✅ 외부에 신호만 보냄
 
     def set_character_data(self, categories, category_icons, char_icons):
         self.tree.clear()

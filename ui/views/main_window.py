@@ -27,7 +27,7 @@ class CentralSurface(StyledWidget):
         # 여기에 "투명하지만 존재하는 픽셀" 장벽을 단 1회만 생성
         painter = QPainter(self)
         painter.fillRect(self.rect(), QColor(0, 0, 0, 1))  # 알파 1 = 육안에 안보이지만 존재
-
+        
 class MainWindow(QMainWindow):
     
     """ModsView 제거 후 완전 분리형 UI 구조 (조립 중심형)"""
@@ -265,24 +265,32 @@ class MainWindow(QMainWindow):
         if not ok:
             QMessageBox.warning(self, "오류", msg)
             return
-
         if not payload:
             return
 
-        lists = payload.get("lists", {})
-        selected = payload.get("selected", {})
+        self._apply_selected(payload.get("selected"))
+        self._apply_mod_list(payload.get("lists"), payload.get("preview_map"))
 
-        # ✅ 캐릭터 변경 처리
-        if "character" in selected:
-            self.current_character = selected["character"]
-            self.update_sidebar_selection(self.current_character)
+    def _apply_selected(self, selected):
+        if not selected or "character" not in selected:
+            return
 
-        # ✅ 모드 목록 갱신
-        if "mods" in lists and self.current_character:
-            mods = lists["mods"]
-            applied_mod = selected.get("applied_mod")
-            preview_map = payload.get("preview_map", {})
-            self.update_mod_cards(mods, applied_mod, preview_map)
+        character = selected["character"]
+        self.current_character = character
+        self.mod_cards.set_character(character)
+        self.update_sidebar_selection(character)
+
+    def _apply_mod_list(self, lists, preview_map):
+        if not lists or "mods" not in lists or not self.current_character:
+            return
+
+        mods = lists["mods"]
+
+        # ✅ 책임 복원: 적용 상태는 여기서 직접 가져온다
+        applied_mod = self.controller.get_current_applied()
+
+        preview_map = preview_map or {}
+        self.update_mod_cards(mods, applied_mod, preview_map)
 
     # ---------------------------------------------------
     # 트리 탐색
@@ -327,7 +335,9 @@ class MainWindow(QMainWindow):
     def _connect_signals(self):
         self.topbar.btn_settings.clicked.connect(self.open_settings_dialog)
         self.topbar.btn_start.clicked.connect(self.on_start_xmmi)
-        self.sidebar.tree.itemClicked.connect(self._handle_tree_item_clicked)
+        # self.sidebar.tree.itemClicked.connect(self._handle_tree_item_clicked)
+        self.sidebar.characterSelected.connect(self.on_character_clicked)
+        self.mod_cards.modFolderDropped.connect(self._handle_mod_folder_dropped)
 
     # ---------------------------------------------------
     # 캐릭터 클릭
@@ -427,11 +437,11 @@ class MainWindow(QMainWindow):
 
 
     def _add_resize_handle(self):
-        """오른쪽-하단 모서리에 투명 크기조절 핸들 추가"""
-        self._grip = QSizeGrip(self)
+        self._grip = QSizeGrip(self.centralWidget())   # ✅ 여기 변경
         self._grip.setStyleSheet("QSizeGrip { background: transparent; }")
         self._grip.setFixedSize(20, 20)
         self._reposition_grip()
+        self._grip.raise_()   # ✅ 최상단 배치
 
         # ✅ 항상 오른쪽 아래 위치 고정
     def _reposition_grip(self):
@@ -440,6 +450,10 @@ class MainWindow(QMainWindow):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._reposition_grip()
+        
+        # ✅ 크기 변경 시 mod_cards 즉시 재배치
+        if hasattr(self, "mod_cards"):
+            self.mod_cards.request_reposition_layout()
 
     # ---------------------------------------------------
     # XXMI 실행

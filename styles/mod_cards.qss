@@ -6,7 +6,10 @@
     border-radius: 0px; /* 여기서 둥근 모서리는 안 줌 (부모가 유리판) */
 }
 
-EmptyModDropCard QLabel {
+EmptyModDropCard QLabel, 
+NoCharacterSelectedCard QLabel {
+    font-size: 25px;   /* ✅ 원하는 크기 */
+    font-weight: 500;  /* 선택: 반굵게 */
     color: aliceblue;
 }
 
@@ -41,3 +44,4 @@ QScrollBar::add-page:vertical,
 QScrollBar::sub-page:vertical {
     background: transparent;
 }
+

@@ -11,7 +11,7 @@ def _icons_dir() -> str:
     """
     meipass = getattr(sys, "_MEIPASS", None)
     root = Path(meipass) if meipass else Path(__file__).resolve().parents[1]
-    return str(root / "resources" / "icons")
+    return str(root / "resources" / "Wuthering_Waves")
 
 def _icon(path_name: str) -> str:
     return str(Path(_icons_dir()) / path_name)

@@ -1,34 +1,66 @@
 /* styles/topbar.qss */
 
+/* TopBar 배경 */
 #TopBar {
-    background: rgba(40, 40, 45, 0.55); /* 반투명 */
+    background: rgba(40, 40, 45, 0.55);
     border-bottom: 1px solid #333;
 }
 
+/* 제목 라벨 */
 #TitleLabel {
     color: #f0f0f0;
     font-size: 14px;
     font-weight: 600;
 }
 
-#WindowButton {
+/* 🔥 공통 버튼 기본 스타일 */
+#TopBar QPushButton {
     background: transparent;
-    color: #cccccc;
-    padding: 4px 10px;
+    border: none;
+    padding: 6px;
+    color: white;   /* 기본 아이콘 버튼 색 */
+}
+
+/* 일반 기능 버튼 */
+#TopBar QPushButton#IconButton {
+    min-width: 26px;
+    min-height: 26px;
+}
+
+#TopBar QPushButton#IconButton:hover {
+    background-color: rgba(255,255,255,0.1);
     border-radius: 6px;
 }
 
-#WindowButton:hover {
-    background: rgba(255,255,255,0.12);
+#TopBar QPushButton#IconButton:pressed {
+    background-color: rgba(255,255,255,0.18);
 }
 
-#CloseButton {
-    background: transparent;
-    color: #e66;
-    padding: 4px 10px;
+/* 창 버튼 (최소화 / 최대화) + 닫기 버튼 */
+#TopBar QPushButton#WindowButton,
+#TopBar QPushButton#CloseButton {
+    min-width: 28px;
+    min-height: 28px;
+    color: #ffffff;   /* ← 여기서 기본과 다르게 override */
+}
+
+/* 창 버튼 hover */
+#TopBar QPushButton#WindowButton:hover {
+    background-color: rgba(255,255,255,0.1);
     border-radius: 6px;
 }
-#CloseButton:hover {
-    background: rgba(255,80,80,0.45);
-    color: white;
+
+/* 닫기 버튼 hover만 따로 강조 */
+#TopBar QPushButton#CloseButton:hover {
+    background-color: rgba(255,0,0,0.35);
+    border-radius: 6px;
+}
+
+#TopBar QPushButton#CloseButton:pressed {
+    background-color: rgba(230, 101, 101, 0.815);
+}
+
+#TopBar QPushButton#WindowButton:pressed {
+    background-color: #4564c0;
+    border-radius: 6px;
 }

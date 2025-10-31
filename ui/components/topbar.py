@@ -1,14 +1,21 @@
 # ui/components/topbar.py
+import os
 
 from PyQt5.QtWidgets import QHBoxLayout, QPushButton, QLabel
-from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtCore import Qt, QPoint, QSize
+from PyQt5.QtGui import QIcon
 
 from utils.styled_widget import StyledWidget   # ✅ 변경됨
+from utils.svg_icon import white_svg_icon
+from utils.icon_button import IconButton
+
+
+ICON = lambda name: QIcon(os.path.join("resources", "icons", name))
 
 class TopBar(StyledWidget):  # ✅ QWidget → StyledWidget
     qss = "topbar.qss"       # ✅ QSS 자동 적용
     object_name = "TopBar"   # ✅ ObjectName 자동 적용
-
+    
     """
     ✅ 이제 이 TopBar 는 진짜 TitleBar 로 동작
     - 창 이동
@@ -24,54 +31,82 @@ class TopBar(StyledWidget):  # ✅ QWidget → StyledWidget
         layout.setContentsMargins(12, 6, 12, 6)
         layout.setSpacing(10)
 
-        # 앱 이름
+        # 제목
         self.title = QLabel("WWWMM - Wuthering Waves Mod Manager 2.0.0")
         self.title.setObjectName("TitleLabel")
 
-        # 실행 버튼
-        self.btn_start = QPushButton("Launch XXMI")
-        self.btn_settings = QPushButton("Settings")
+        # ✅ 주요 기능 버튼 (IconButton 사용)
+        self.btn_start = IconButton("start.svg")
+        self.btn_settings = IconButton("settings.svg")
+        self.btn_add_mod = IconButton("add.svg")
+        self.btn_unapply_all = IconButton("link_disconnect.svg")
 
-        # 창 버튼들
-        self.btn_min = QPushButton("—")
-        self.btn_max = QPushButton("⬜")
-        self.btn_close = QPushButton("✕")
+        # ✅ 창 버튼들 (obj_name 변경 적용)
+        self.btn_min = IconButton("subtract.svg", obj_name="WindowButton")
+        self.btn_max = IconButton("square.svg", obj_name="WindowButton")
+        self.btn_close = IconButton("close.svg", obj_name="CloseButton")
 
-        # ✅ 스타일 적용을 위한 ObjectName 유지
-        self.btn_min.setObjectName("WindowButton")
-        self.btn_max.setObjectName("WindowButton")
-        self.btn_close.setObjectName("CloseButton")
-
+        # 레이아웃 구성
         layout.addWidget(self.title)
         layout.addStretch()
+
+        layout.addWidget(self.btn_add_mod)
+        layout.addWidget(self.btn_unapply_all)
         layout.addWidget(self.btn_start)
         layout.addWidget(self.btn_settings)
-        layout.addSpacing(20)
+
+        layout.addSpacing(16)
         layout.addWidget(self.btn_min)
         layout.addWidget(self.btn_max)
         layout.addWidget(self.btn_close)
 
-        # 창 제어 시그널 연결
+        # 창 동작 연결
         self.btn_min.clicked.connect(lambda: self.parent_window.showMinimized())
-        self.btn_max.clicked.connect(lambda: (
-            self.parent_window.showMaximized()
-            if not self.parent_window.isMaximized()
-            else self.parent_window.showNormal()
-        ))
+        self.btn_max.clicked.connect(
+            lambda: self.parent_window.showNormal()
+            if self.parent_window.isMaximized()
+            else self.parent_window.showMaximized()
+        )
         self.btn_close.clicked.connect(self.parent_window.close)
 
         self._drag_pos = None
 
-    # ✅ 창 드래그 이동 처리
+    # 창 드래그 이동
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
+            self._drag_offset = event.pos()
             self._drag_pos = event.globalPos()
 
     def mouseMoveEvent(self, event):
-        if self._drag_pos:
+        if not (event.buttons() & Qt.LeftButton):
+            return
+
+        # _drag_pos 초기화 안되었으면 그냥 return
+        if self._drag_pos is None:
+            return
+
+        if self.parent_window.isMaximized():
+            ratio = event.x() / self.width()
+            new_width = self.parent_window.normalGeometry().width()
+            
+            self.parent_window.showNormal()
+
+            new_x = int(event.globalX() - new_width * ratio)
+            new_y = event.globalY() - self._drag_offset.y()
+
+            self.parent_window.move(new_x, new_y)
+            self._drag_pos = event.globalPos()
+        else:
             diff = event.globalPos() - self._drag_pos
-            self.parent_window.move(self.parent_window.x() + diff.x(), self.parent_window.y() + diff.y())
+            self.parent_window.move(self.parent_window.pos() + diff)
             self._drag_pos = event.globalPos()
 
     def mouseReleaseEvent(self, event):
         self._drag_pos = None
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            if self.parent_window.isMaximized():
+                self.parent_window.showNormal()
+            else:
+                self.parent_window.showMaximized()
