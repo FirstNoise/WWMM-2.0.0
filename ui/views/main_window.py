@@ -116,32 +116,108 @@ class MainWindow(QMainWindow):
     # 초기 실행
     # ---------------------------------------------------
     def initialize_app(self):
-        self.controller.load_settings()
+    # ✅ 캐릭터 메타 구조 불러오기
         ok, msg, payload = self.controller.get_character_data()
         if not ok:
             QMessageBox.warning(self, "오류", msg)
             return
 
         meta = payload.get("characters", {})
+        self._meta = meta  # ✅ 저장한다 (이제 재사용 가능)
+        self.build_sidebar(meta)  # ✅ 트리 생성은 1회만
+
+        # ✅ 실제 설치된 캐릭터 필터링
         categories = meta.get("categories", {})
         ui_characters = [c for group in categories.values() for c in group] + meta.get("wanderer", [])
-
         ok, msg, payload = self.controller.load_characters(ui_characters)
         self.apply_payload(ok, msg, payload)
 
-
-
-        # ✅ WWMM 전체 mods 폴더 감시
+        # ✅ 감시자 연결 그대로 유지
         mods_root = self.controller.logic.wwmm_mods_path
         if os.path.isdir(mods_root):
-
-            # ✅ 감시 초기화 시 경고 방지
-            old = self.watcher.directories()
-            if old and len(old) > 0:
-                self.watcher.removePaths(old)
-
             self.watcher.addPath(mods_root)
             self._refresh_mods_watch_targets()
+
+        ok, msg, payload = self.controller.load_settings()
+        self.apply_payload(ok, msg, payload)
+
+
+    # ---------------------------------------------------
+    # Sidebar 초기 생성 함수 추가
+    # ---------------------------------------------------
+
+    def build_sidebar(self, meta):
+        categories = meta.get("categories", {})
+        category_icons = meta.get("category_icons", {})
+        category_colors = meta.get("category_colors", {})
+        char_icons = meta.get("char_icons", {})
+        wanderers = meta.get("wanderer", [])
+
+        self.sidebar.tree.clear()
+
+        # ✅ 방랑자 캐릭터
+        for char in wanderers:
+            item = QTreeWidgetItem([char])
+            icon = char_icons.get(char)
+            if icon and os.path.exists(icon):
+                item.setIcon(0, QIcon(icon))
+            self.sidebar.tree.insertTopLevelItem(0, item)
+
+        # ✅ 카테고리/캐릭터 구조
+        for category, chars in categories.items():
+            parent = QTreeWidgetItem([category])
+
+            if category in category_colors:
+                parent.setForeground(0, QBrush(QColor(category_colors[category])))
+
+            icon = category_icons.get(category)
+            if icon and os.path.exists(icon):
+                parent.setIcon(0, QIcon(icon))
+
+            self.sidebar.tree.addTopLevelItem(parent)
+
+            for char in chars:
+                child = QTreeWidgetItem([char])
+                icon = char_icons.get(char)
+                if icon and os.path.exists(icon):
+                    child.setIcon(0, QIcon(icon))
+                parent.addChild(child)
+
+    # ---------------------------------------------------
+    # Sidebar 선택만 갱신
+    # ---------------------------------------------------
+
+    def update_sidebar_selection(self, character):
+        item = self._find_tree_item(character)
+        if item:
+            self.sidebar.tree.setCurrentItem(item)
+            self._expand_parent_of_character(character)
+
+    # ---------------------------------------------------
+    # 모드 카드 갱신 전용 함수
+    # ---------------------------------------------------
+
+    def update_mod_cards(self, mods, applied_mod, preview_map):
+        self.mod_cards.clear_cards()
+
+        if not mods:
+            return
+
+        for mod in mods:
+            mod_folder = os.path.join(self.controller.logic.wwmm_mods_path, self.current_character, mod)
+            preview = preview_map.get(mod)
+            card = ModCard(mod, mod_folder, preview, applied=(mod == applied_mod))
+
+            card.applyRequested.connect(self._handle_mod_apply)
+            card.deleteRequested.connect(self._handle_mod_delete)
+            card.previewRequested.connect(self._handle_preview_clicked)
+            card.preview_label.previewDropped.connect(
+                lambda folder, img, mod_name=mod: self._handle_preview_dropped(mod_name, img)
+            )
+
+
+            self.mod_cards.add_card(card)
+
 
     # ---------------------------------------------------
     # 현재 선택된 캐릭터 유지하며 UI만 갱신
@@ -189,120 +265,24 @@ class MainWindow(QMainWindow):
         if not ok:
             QMessageBox.warning(self, "오류", msg)
             return
+
         if not payload:
             return
 
-        # ✅ 트리 펼침/접힘 상태 저장
-        expand_state = self._remember_tree_expansion()
         lists = payload.get("lists", {})
         selected = payload.get("selected", {})
-        available_characters = lists.get("characters", [])
 
-        # ✅ Sidebar 조립
-        self.sidebar.tree.clear()
-
-        ok, msg, meta_payload = self.controller.get_character_data()
-        if not ok:
-            QMessageBox.warning(self, "오류", msg)
-            return
-
-        meta = meta_payload.get("characters", {})
-        categories = meta.get("categories", {})
-        category_icons = meta.get("category_icons", {})
-        category_colors = meta.get("category_colors", {})
-        char_icons = meta.get("char_icons", {})
-
-        # ✅ 방랑자(단일 캐릭터)를 최상위에 직접 추가
-        wanderers = meta.get("wanderer", [])
-        for char_name in wanderers:
-            item = QTreeWidgetItem([char_name])
-
-            icon_path = char_icons.get(char_name)
-            if icon_path and os.path.exists(icon_path):
-                item.setIcon(0, QIcon(icon_path))
-
-            self.sidebar.tree.insertTopLevelItem(0, item)
-
-        for category_name, char_list in categories.items():
-
-            # 카테고리 = 부모 노드
-            category_item = QTreeWidgetItem([category_name])
-
-            # 색상 적용
-            color = category_colors.get(category_name)
-            if color:
-                category_item.setForeground(0, QBrush(QColor(color)))
-
-            # 아이콘 적용
-            icon_path = category_icons.get(category_name)
-            if icon_path and os.path.exists(icon_path):
-                category_item.setIcon(0, QIcon(icon_path))
-
-            self.sidebar.tree.addTopLevelItem(category_item)
-
-            # 캐릭터 = 자식 노드
-            for char_name in char_list:
-
-                child = QTreeWidgetItem([char_name])
-
-                icon_path = char_icons.get(char_name)
-                if icon_path and os.path.exists(icon_path):
-                    child.setIcon(0, QIcon(icon_path))
-
-                category_item.addChild(child)
-
-
-
-        # ✅ 선택 캐릭터를 먼저 확정
+        # ✅ 캐릭터 변경 처리
         if "character" in selected:
             self.current_character = selected["character"]
+            self.update_sidebar_selection(self.current_character)
 
-        # ✅ 펼침/접힘 상태 복원
-        self._restore_tree_expansion(expand_state)
-
-        # ✅ 현재 캐릭터가 속한 상위 카테고리만 펼침 (다른 카테고리는 그대로)
-        if self.current_character:
-            self._expand_parent_of_character(self.current_character)
-
-        # ✅ 선택 캐릭터 및 모드 구성
-        if "character" in selected:
-            self.current_character = selected["character"]
-
+        # ✅ 모드 목록 갱신
         if "mods" in lists and self.current_character:
             mods = lists["mods"]
             applied_mod = selected.get("applied_mod")
             preview_map = payload.get("preview_map", {})
-
-            self.mod_cards.clear_cards()
-
-            if not mods:
-                # 카드가 없으면 그냥 clear 후 return → 컨테이너가 자동으로 placeholder 처리
-                self.mod_cards.clear_cards()
-                return
-
-            for row, mod_name in enumerate(mods):
-                mod_folder = os.path.join(self.controller.logic.wwmm_mods_path, self.current_character, mod_name)  # ✅ 진짜 폴더 경로
-                preview_path = preview_map.get(mod_name, None)
-                card = ModCard(
-                    mod_name=mod_name,
-                    mod_folder_path=mod_folder,     # ✅ 폴더 경로 제대로 전달
-                    preview_path=preview_path,      # ✅ 이미지 경로 올바르게 전달
-                    applied=(mod_name == applied_mod)
-                )
-
-                card.applyRequested.connect(self._handle_mod_apply)
-                card.deleteRequested.connect(self._handle_mod_delete)
-                card.previewRequested.connect(self._handle_preview_clicked)
-                card.preview_label.previewDropped.connect(
-                    lambda folder, img, m=mod_name: self._handle_preview_dropped(m, img)
-                )
-                self.mod_cards.add_card(card)
-
-                # ✅ 트리에서 현재 캐릭터를 선택 상태로 적용
-            if self.current_character:
-                item = self._find_tree_item(self.current_character)
-                if item:
-                    self.sidebar.tree.setCurrentItem(item)
+            self.update_mod_cards(mods, applied_mod, preview_map)
 
     # ---------------------------------------------------
     # 트리 탐색

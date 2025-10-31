@@ -38,3 +38,5 @@ class SideBar(StyledWidget):  # ✅ QWidget → StyledWidget
                     child.setIcon(0, QIcon(char_icons[char]))
 
         self.tree.expandAll()
+
+        
