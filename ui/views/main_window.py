@@ -338,12 +338,30 @@ class MainWindow(QMainWindow):
         # self.sidebar.tree.itemClicked.connect(self._handle_tree_item_clicked)
         self.sidebar.characterSelected.connect(self.on_character_clicked)
         self.mod_cards.modFolderDropped.connect(self._handle_mod_folder_dropped)
+        self.topbar.btn_add_mod.clicked.connect(self.on_add_mod_clicked)
 
     # ---------------------------------------------------
     # 캐릭터 클릭
     # ---------------------------------------------------
     def on_character_clicked(self, char_name: str):
         ok, msg, payload = self.controller.select_character(char_name)
+        self.apply_payload(ok, msg, payload)
+
+    # ---------------------------------------------------
+    # 모드 추가 (버튼클릭)
+    # ---------------------------------------------------
+
+    def on_add_mod_clicked(self):
+        # 현재 캐릭터가 없다면 경고 (UI 단계 방어)
+        if not self.current_character:
+            QMessageBox.warning(self, "캐릭터 필요", "캐릭터를 먼저 선택해주세요.")
+            return
+
+        folder_path = QFileDialog.getExistingDirectory(self, "추가할 모드 폴더 선택")
+        if not folder_path:
+            return  # 사용자가 취소함
+
+        ok, msg, payload = self.controller.add_mod_folder(folder_path)
         self.apply_payload(ok, msg, payload)
 
     # ---------------------------------------------------
